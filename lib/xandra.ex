@@ -156,17 +156,24 @@ defmodule Xandra do
 
   alias __MODULE__.{Batch, Connection, ConnectionError, Error, Prepared, Page, PageStream, Simple}
 
+  @type t :: %__MODULE__{
+          conn_pid: GenServer.server,
+          call_options: Keyword.t
+        }
   @type statement :: String.t
   @type values :: list | map
   @type error :: Error.t | ConnectionError.t
   @type result :: Xandra.Void.t | Page.t | Xandra.SetKeyspace.t | Xandra.SchemaChange.t
-  @type conn :: DBConnection.conn
+  @type conn :: t | DBConnection.t
 
   @default_port 9042
   @default_start_options [
     nodes: ["127.0.0.1"],
     idle_timeout: 30_000,
+    pool: DBConnection.Connection
   ]
+
+  defstruct [:conn_pid, call_options: []]
 
   @doc """
   Starts a new connection or pool of connections to Cassandra.
@@ -256,7 +263,16 @@ defmodule Xandra do
       |> Keyword.merge(options)
       |> parse_start_options()
       |> Keyword.put(:prepared_cache, Prepared.Cache.new)
-    DBConnection.start_link(Connection, options)
+
+    with {:ok, conn_pid} <- DBConnection.start_link(Connection, options) do
+      call_options = [pool: Keyword.fetch!(options, :pool)]
+
+      if Keyword.has_key?(options, :name) do
+        __MODULE__.Registry.associate(conn_pid, call_options)
+      end
+
+      {:ok, %__MODULE__{conn_pid: conn_pid, call_options: call_options}}
+    end
   end
 
   @doc """
@@ -362,6 +378,7 @@ defmodule Xandra do
   """
   @spec prepare(conn, statement, Keyword.t) :: {:ok, Prepared.t} | {:error, error}
   def prepare(conn, statement, options \\ []) when is_binary(statement) do
+    {conn, options} = unwrap(conn, options)
     DBConnection.prepare(conn, %Prepared{statement: statement}, options)
   end
 
@@ -708,6 +725,7 @@ defmodule Xandra do
   """
   @spec run(conn, Keyword.t, (conn -> result)) :: result when result: var
   def run(conn, options \\ [], fun) when is_function(fun, 1) do
+    {conn, options} = unwrap(conn, options)
     DBConnection.run(conn, fun, options)
   end
 
@@ -799,6 +817,7 @@ defmodule Xandra do
   end
 
   defp execute_without_retrying(conn, %Simple{} = query, params, options) do
+    {conn, options} = unwrap(conn, options)
     with {:ok, %Error{} = error} <- DBConnection.execute(conn, query, params, options) do
       {:error, error}
     end
@@ -828,17 +847,28 @@ defmodule Xandra do
 
   defp parse_start_options(options) do
     cluster? = options[:pool] == Xandra.Cluster
-    Enum.flat_map(options, fn
-      {:nodes, nodes} when cluster? ->
-        [nodes: Enum.map(nodes, &parse_node/1)]
-      {:nodes, [string]} ->
-        {address, port} = parse_node(string)
-        [address: address, port: port]
-      {:nodes, _nodes} ->
-        raise ArgumentError, "multi-node use requires the :pool option to be set to Xandra.Cluster"
-      {_key, _value} = option ->
-        [option]
-    end)
+
+    options =
+      Enum.flat_map(options, fn
+        {:nodes, nodes} when cluster? ->
+          [nodes: Enum.map(nodes, &parse_node/1)]
+
+        {:nodes, [string]} ->
+          {address, port} = parse_node(string)
+          [address: address, port: port]
+
+        {:nodes, _nodes} ->
+          raise ArgumentError, "multi-node use requires the :pool option to be set to Xandra.Cluster"
+
+        {_key, _value} = option ->
+          [option]
+      end)
+
+    if cluster? do
+      Keyword.put_new(options, :underlying_pool, @default_start_options[:pool])
+    else
+      options
+    end
   end
 
   defp parse_node(string) do
@@ -853,5 +883,20 @@ defmodule Xandra do
       [address] ->
         {String.to_charlist(address), @default_port}
     end
+  end
+
+  @compile {:inline, [unwrap: 2]}
+
+  defp unwrap(%__MODULE__{conn_pid: conn_pid, call_options: call_options}, options) do
+    {conn_pid, call_options ++ options}
+  end
+
+  defp unwrap(%DBConnection{} = conn, options) do
+    {conn, options}
+  end
+
+  defp unwrap(name, options) do
+    call_options = __MODULE__.Registry.lookup(name)
+    {name, call_options ++ options}
   end
 end

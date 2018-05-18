@@ -81,7 +81,6 @@ defmodule Xandra.Cluster do
 
   @behaviour DBConnection.Pool
 
-  @default_pool_module DBConnection.Connection
   @default_load_balancing :random
 
   alias __MODULE__.{ControlConnection, StatusChange}
@@ -99,7 +98,7 @@ defmodule Xandra.Cluster do
   ]
 
   def ensure_all_started(options, type) do
-    {pool_module, options} = Keyword.pop(options, :underlying_pool, @default_pool_module)
+    {pool_module, options} = Keyword.pop(options, :underlying_pool)
     pool_module.ensure_all_started(options, type)
   end
 
@@ -108,7 +107,7 @@ defmodule Xandra.Cluster do
   end
 
   def start_link(Xandra.Connection, options) do
-    {pool_module, options} = Keyword.pop(options, :underlying_pool, @default_pool_module)
+    {pool_module, options} = Keyword.pop(options, :underlying_pool)
     {load_balancing, options} = Keyword.pop(options, :load_balancing, @default_load_balancing)
     {nodes, options} = Keyword.pop(options, :nodes)
     {name, options} = Keyword.pop(options, :name)

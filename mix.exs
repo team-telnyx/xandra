@@ -27,7 +27,8 @@ defmodule Xandra.Mixfile do
   end
 
   def application() do
-    [applications: [:logger, :db_connection]]
+    [applications: [:logger, :db_connection],
+     mod: {Xandra.Application, []}]
   end
 
   defp package() do
@@ -38,6 +39,7 @@ defmodule Xandra.Mixfile do
 
   defp deps() do
     [{:db_connection, "~> 1.0"},
+     {:poolboy, ">= 0.0.0"},
      {:snappy, github: "skunkwerks/snappy-erlang-nif", only: [:dev, :test]},
      {:ex_doc, "~> 0.14", only: :dev}]
   end
