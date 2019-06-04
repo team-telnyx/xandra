@@ -1,4 +1,4 @@
-ExUnit.start()
+ExUnit.start(exclude: [:docker_cluster])
 
 defmodule XandraTest.IntegrationCase do
   use ExUnit.CaseTemplate
