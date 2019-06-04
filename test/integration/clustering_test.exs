@@ -45,26 +45,4 @@ defmodule ClusteringTest do
 
     assert await_connected(cluster, _options = [], &Xandra.execute!(&1, "USE #{keyspace}"))
   end
-
-  describe "autodiscovery" do
-    @describetag :docker_cluster
-    test "using a single seed node", %{keyspace: keyspace, start_options: start_options} do
-      statement = "USE #{keyspace}"
-
-      {:ok, cluster} = Xandra.Cluster.start_link(nodes: ["seed"], name: TestCluster)
-
-      assert await_connected(cluster, _options = [], &Xandra.execute!(&1, statement))
-
-      query = "SELECT host_id FROM system.local"
-
-      host_ids =
-        for _ <- 1..100, into: MapSet.new() do
-          page = Xandra.Cluster.execute!(TestCluster, query, _params = [])
-          [%{"host_id" => host_id}] = Enum.to_list(page)
-          host_id
-        end
-
-      assert MapSet.size(host_ids) == 3
-    end
-  end
 end

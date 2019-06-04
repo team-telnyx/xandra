@@ -17,8 +17,11 @@ defmodule Xandra.Mixfile do
       deps: deps(),
 
       # Task aliases
-      aliases: ["test.scylladb": "test --exclude encryption --exclude cassandra_specific"],
-      preferred_cli_env: ["test.scylladb": :test],
+      aliases: [
+        "test.scylladb": "test --exclude encryption --exclude cassandra_specific",
+        "test.docker_cluster": &test_docker_cluster/1
+      ],
+      preferred_cli_env: ["test.scylladb": :test, "test.docker_cluster": :test],
 
       # Hex
       package: package(),
@@ -57,5 +60,13 @@ defmodule Xandra.Mixfile do
       {:ex_doc, "~> 0.20", only: :dev},
       {:dialyxir, "~> 1.0.0-rc.6", only: :dev, runtime: false}
     ]
+  end
+
+  defp test_docker_cluster(_args) do
+    Mix.shell().cmd(
+      "docker-compose --file docker-compose.cluster.yml exec --workdir /app elixir " <>
+        "mix test --only docker_cluster",
+      env: [{"COMPOSE_INTERACTIVE_NO_CLI", "1"}]
+    )
   end
 end

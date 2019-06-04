@@ -44,6 +44,14 @@ jobs:
     - <<: *test-scylla
       env: SCYLLA_VERSION=2.0.0
 
+    - &test-docker-cluster
+      stage: test docker cluster
+      script: mix test.docker_cluster
+      before_script:
+        - docker-compose --file docker-compose.cluster.yml up -d
+        - ./test/docker/health-check-services.sh
+      env: CASSANDRA_VERSION=3
+
     - stage: check formatted
       script: mix format --check-formatted
       before_install: skip
@@ -53,4 +61,5 @@ jobs:
 stages:
   - check formatted
   - test
+  - test docker cluster
   - test scylla
