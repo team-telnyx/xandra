@@ -505,6 +505,15 @@ defmodule Xandra.Cluster do
         end)
 
         state
+
+      {:error, :already_present} ->
+        Logger.warn(fn ->
+          "Xandra cluster #{inspect(self())} " <>
+            "received request to start another connection pool " <>
+            "to the same address: #{inspect(address)} that has been terminated"
+        end)
+
+        state
     end
   end
 

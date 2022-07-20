@@ -57,7 +57,9 @@ defmodule Xandra.Cluster.ControlConnection do
 
     case state.transport.connect(address, port, state.transport_options, @default_timeout) do
       {:ok, socket} ->
-        state = %{state | socket: socket}
+        {:ok, {peer_address, _}} = inet_mod(state.transport).peername(socket)
+        new? = peer_address != state.peername
+        state = %{state | socket: socket, new: new?}
         transport = state.transport
 
         with {:ok, supported_options} <-
