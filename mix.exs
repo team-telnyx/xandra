@@ -55,6 +55,7 @@ defmodule Xandra.Mixfile do
   defp deps() do
     [
       {:db_connection, "~> 2.0"},
+      {:connection, "~> 1.0"},
       {:decimal, "~> 1.7", optional: true},
 
       # Dev and test dependencies
