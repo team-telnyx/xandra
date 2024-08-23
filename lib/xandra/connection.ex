@@ -116,7 +116,6 @@ defmodule Xandra.Connection do
     {:ok, state}
   end
 
-  @impl true
   def checkin(state) do
     {:ok, state}
   end

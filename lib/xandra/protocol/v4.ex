@@ -365,7 +365,7 @@ defmodule Xandra.Protocol.V4 do
   defp encode_value(:decimal, decimal) do
     decimal_mod = Decimal
 
-    if decimal_mod.decimal?(decimal) do
+    if decimal_mod.is_decimal(decimal) do
       %^decimal_mod{coef: coef, exp: exp, sign: sign} = decimal
       encode_value(:decimal, {_value = sign * coef, _scale = -exp})
     else
