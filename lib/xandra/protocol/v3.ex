@@ -1,7 +1,7 @@
 defmodule Xandra.Protocol.V3 do
   @moduledoc false
 
-  use Bitwise
+  import Bitwise
 
   alias Xandra.{
     Batch,
@@ -348,7 +348,7 @@ defmodule Xandra.Protocol.V3 do
     <<value + @unix_epoch_days::32>>
   end
 
-  defp encode_value(:date, value) when value in -@unix_epoch_days..(@unix_epoch_days - 1) do
+  defp encode_value(:date, value) when value in -@unix_epoch_days..(@unix_epoch_days - 1)//1 do
     <<value + @unix_epoch_days::32>>
   end
 
@@ -419,7 +419,7 @@ defmodule Xandra.Protocol.V3 do
     <<value::64>>
   end
 
-  defp encode_value(:time, value) when value in 0..86_399_999_999_999 do
+  defp encode_value(:time, value) when value in 0..86_399_999_999_999//1 do
     <<value::64>>
   end
 

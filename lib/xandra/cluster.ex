@@ -498,7 +498,7 @@ defmodule Xandra.Cluster do
         # TODO: to have a reliable cluster name, we need to bring the name given on
         # start_link/1 into the state because it could be an atom, {:global, term}
         # and so on.
-        Logger.warn(fn ->
+        Logger.warning(fn ->
           "Xandra cluster #{inspect(self())} " <>
             "received request to start another connection pool " <>
             "to the same address: #{inspect(address)}"
@@ -557,8 +557,8 @@ defmodule Xandra.Cluster do
     %{state | pools: remove_pool(pools, address)}
   end
 
-  defp handle_topology_change(state, %{effect: "MOVED_NODE"} = event, _data_center) do
-    _ = Logger.warn("Ignored TOPOLOGY_CHANGE event: #{inspect(event)}")
+  defp handle_topology_change(state, %{effect: "MOVED_NODE"} = event) do
+    _ = Logger.warning("Ignored TOPOLOGY_CHANGE event: #{inspect(event)}")
     state
   end
 
