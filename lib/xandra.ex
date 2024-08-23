@@ -215,7 +215,7 @@ defmodule Xandra do
   @type start_option :: xandra_start_option | db_connection_start_option
   @type start_options :: [start_option]
 
-  @default_address '127.0.0.1'
+  @default_address ~c"127.0.0.1"
   @default_port 9042
 
   @default_start_options [
