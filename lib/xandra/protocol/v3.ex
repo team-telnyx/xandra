@@ -15,6 +15,8 @@ defmodule Xandra.Protocol.V3 do
 
   alias Xandra.Cluster.{StatusChange, TopologyChange}
 
+  require Decimal
+
   @unix_epoch_days 0x80000000
 
   # We need these two macros to make
